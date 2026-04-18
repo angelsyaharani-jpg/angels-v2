@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benderang Hidup Indonesia — Dashboard Portal</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0a0c10;
+            color: #fff;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .portal-box {
+            background: #0f1218;
+            border: 1px solid #1a1f2e;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            max-width: 400px;
+            width: 90%;
+        }
+        .portal-logo { margin-bottom: 20px; }
+        .portal-logo img { height: 60px; }
+        .portal-title { font-size: 20px; font-weight: 600; margin-bottom: 8px; color: #d0d4e0; }
+        .portal-sub { font-size: 14px; color: #555e7a; margin-bottom: 30px; }
+        .btn-portal {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .btn-admin { background: #EF9F27; color: #000; }
+        .btn-admin:hover { background: #ffae3b; transform: translateY(-2px); }
+        .btn-user { background: #1D9E75; color: #fff; }
+        .btn-user:hover { background: #28c794; transform: translateY(-2px); }
+        .portal-footer { font-size: 11px; color: #3a3f50; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="portal-box">
+        <div class="portal-logo">
+            <img src="https://i.imgur.com/placeholder.png" alt="BHI Logo" onerror="this.style.display='none'">
+        </div>
+        <div class="portal-title">Benderang Hidup Indonesia</div>
+        <div class="portal-sub">Sistem Monitoring & Dashboard TV V6</div>
+        
+        <a href="admin.html" class="btn-portal btn-admin">Buka Panel Admin (TV Dashboard)</a>
+        <a href="user.html" class="btn-portal btn-user">Buka Panel Karyawan</a>
+        
+        <div class="portal-footer">© 2025 Benderang Hidup Indonesia</div>
+    </div>
+</body>
+</html>
