@@ -146,7 +146,7 @@
   <p style="font-size:12px;color:#555e7a;margin-bottom:12px">Log tersimpan di browser. Aktifkan Google Sheets di Admin untuk log permanen.</p>
   <div style="overflow-x:auto">
     <table class="log-table">
-      <thead><tr><th>Waktu</th><th>Karyawan</th><th>Project</th><th>Task</th><th>Sebelum</th><th>Sesudah</th><th>Alasan</th><th>Status</th></tr></thead>
+      <thead><tr><th>Waktu</th><th>Karyawan</th><th>Project</th><th>Task</th><th>Deadline</th><th>Sebelum</th><th>Sesudah</th><th>Alasan</th><th>Status</th><th>Aksi</th></tr></thead>
       <tbody id="log-tbody"></tbody>
     </table>
   </div>
@@ -422,7 +422,8 @@ function commitUpdate(projId,taskId,newPct,person,isLate,reason){
     after:newPct,
     isLate,
     reason,
-    deadline:t.extDeadline||t.deadline||"",
+    deadlineProject:p.deadline||"",
+    deadlineTask:t.extDeadline||t.deadline||"",
     status:newPct>=100?"Selesai":"Update"
   };
   updateLog.push(logEntry);
@@ -523,11 +524,20 @@ function renderLog(){
     <td>${esc(l.person||"")}</td>
     <td>${esc(l.project||"")}</td>
     <td>${esc(l.task||"")}</td>
+    <td>${esc(l.deadlineProject||l.deadlineTask||"—")}</td>
     <td>${l.before??0}%</td>
     <td><span class="${parseInt(l.after)>=parseInt(l.before)?'chg-up':'chg-dn'}">${l.after??0}%</span></td>
     <td style="font-size:11px;max-width:180px">${esc(l.reason||"")}</td>
     <td>${l.status==="Selesai"?'<span class="st-done">Selesai</span>':l.isLate?'<span class="st-late">Terlambat</span>':'<span class="st-ok">Update</span>'}</td>
+    <td>${isAdmin?`<button class="btn-warn" onclick="deleteHistory(${updateLog.indexOf(l)})">Hapus</button>`:"—"}</td>
   </tr>`).join("");
+}
+
+function deleteHistory(idx){
+  if(!confirm("Hapus log riwayat ini?"))return;
+  updateLog.splice(idx,1);
+  saveState();
+  renderLog();
 }
 
 // ============================================================

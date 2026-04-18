@@ -291,11 +291,13 @@
             <th>Karyawan</th>
             <th>Project</th>
             <th>Task</th>
+            <th>Deadline</th>
             <th>Sebelum</th>
             <th>Sesudah</th>
             <th>Terlambat?</th>
             <th>Alasan</th>
             <th>Status</th>
+            <th>Aksi</th>
           </tr>
         </thead>
         <tbody id="user-log-tbody"></tbody>
@@ -886,7 +888,8 @@
         after: newPct,
         isLate,
         reason,
-        deadline: t.extDeadline || t.deadline || "",
+        deadlineProject: p.deadline || "",
+        deadlineTask: t.extDeadline || t.deadline || "",
         status: newPct >= 100 ? "Selesai" : "Update"
       };
       updateLog.push(logEntry);
@@ -979,7 +982,7 @@
       const imgRight = document.getElementById("np-img-right").value.trim();
       const msg = document.getElementById("np-msg");
       if (!name) { msg.textContent = "Nama wajib diisi."; msg.style.color = "#E24B4A"; return; }
-      const p = { id: ++nProjId, name, client: client || "—", type, priority, imgLeft, imgRight, tasks: [] };
+      const p = { id: ++nProjId, name, client: client || "—", type, priority, deadline: deadline || "", imgLeft, imgRight, tasks: [] };
       if (taskName) p.tasks.push({ id: ++nTaskId, name: taskName, person: person || employees[0]?.name || "", deadline: deadline || "", pct: 0, lateReason: null, extDeadline: null });
       projects.push(p); saveState();
       msg.textContent = "Project berhasil ditambahkan!"; msg.style.color = "#5DCAA5";
@@ -1253,17 +1256,17 @@
     // EXPORT & GDRIVE
     // ============================================================
     function exportAll() {
-      const header = csvRow(["Waktu", "Diupdate oleh", "Karyawan", "Project", "Task", "Sebelum", "Sesudah", "Terlambat?", "Alasan", "Status"]);
+      const header = csvRow(["Project", "Task", "Karyawan (PIC)", "Deadline", "Progress (%)", "Status", "Waktu", "Diupdate oleh", "Sebelum (%)", "Terlambat?", "Alasan"]);
       const rows = updateLog.map(l => {
         const p = projects.find(x => x.name === l.project);
         const t = p ? p.tasks.find(x => x.id === l.taskId) : null;
-        let isLate = "Tidak";
+        let isLateStr = "Tidak";
         if (t) {
           const dl = t.extDeadline || t.deadline;
           const diff = diffDays(dl, l.time);
-          if (diff !== null && diff < 0 && l.after < 100) isLate = "Ya";
+          if (diff !== null && diff < 0 && l.after < 100) isLateStr = "Ya";
         }
-        return csvRow([l.time, l.updatedBy || l.person, l.person, l.project, l.task, l.before + "%", l.after + "%", isLate, l.reason || "", l.status || ""]);
+        return csvRow([l.project, l.task, l.person, l.deadlineProject || l.deadlineTask || "—", l.after + "%", l.status || "Update", l.time, l.updatedBy || l.person, l.before + "%", isLateStr, l.reason || "—"]);
       });
       downloadCSV("\uFEFF" + [header, ...rows].join("\n"), `bhi_master_log_${todayStr()}.csv`);
     }
@@ -1284,20 +1287,20 @@
     }
 
     function exportProjectComplex() {
-      const header = csvRow(["Waktu", "Diupdate oleh", "Karyawan", "Project", "Task", "Sebelum (%)", "Sesudah (%)", "Terlambat?", "Alasan", "Status"]);
+      const header = csvRow(["Project", "Task", "Karyawan (PIC)", "Deadline", "Progress (%)", "Status", "Waktu", "Diupdate oleh", "Sebelum (%)", "Terlambat?", "Alasan"]);
       const rows = [];
       
       // 1. Dari log riwayat
       updateLog.forEach(l => {
         const p = projects.find(x => x.name === l.project);
         const t = p ? p.tasks.find(x => x.id === l.taskId) : null;
-        let isLate = "Tidak";
+        let isLateStr = "Tidak";
         if (t) {
           const dl = t.extDeadline || t.deadline;
           const diff = diffDays(dl, l.time);
-          if (diff !== null && diff < 0 && l.after < 100) isLate = "Ya";
+          if (diff !== null && diff < 0 && l.after < 100) isLateStr = "Ya";
         }
-        rows.push(csvRow([l.time, l.updatedBy || l.person, l.person, l.project, l.task, l.before + "%", l.after + "%", isLate, l.reason || "—", l.status || "Update"]));
+        rows.push(csvRow([l.project, l.task, l.person, l.deadlineProject || l.deadlineTask || "—", l.after + "%", l.status || "Update", l.time, l.updatedBy || l.person, l.before + "%", isLateStr, l.reason || "—"]));
       });
 
       // 2. Task yang belum pernah diupdate
@@ -1305,7 +1308,7 @@
         p.tasks.forEach(t => {
           const hasLog = updateLog.some(l => l.project === p.name && l.task === t.name);
           if (!hasLog) {
-            rows.push(csvRow(["—", "—", t.person, p.name, t.name, "0%", t.pct + "%", "Belum Update", "—", "Belum Update"]));
+            rows.push(csvRow([p.name, t.name, t.person, t.extDeadline || t.deadline || "—", t.pct + "%", "Belum Update", "—", "—", "0%", "Belum Update", "—"]));
           }
         });
       });
@@ -1350,11 +1353,13 @@
           <td>${esc(l.person)}</td>
           <td>${esc(l.project)}</td>
           <td>${esc(l.task)}</td>
+          <td>${esc(l.deadlineProject || l.deadlineTask || '—')}</td>
           <td>${l.before}%</td>
           <td>${l.after}%</td>
           <td>${isLate ? '<span style="color:#E24B4A">Ya</span>' : 'Tidak'}</td>
           <td>${esc(l.reason) || '—'}</td>
           <td>${esc(l.status) || 'Update'}</td>
+          <td><button class="btn-warn" onclick="deleteHistory(${updateLog.indexOf(l)})">Hapus</button></td>
         </tr>`;
       }).join("");
     }
@@ -1363,7 +1368,7 @@
       const tb = document.getElementById("user-log-tbody"); if (!tb) return;
       const logs = isAdmin ? updateLog : updateLog.filter(l => l.person === currentUser);
       document.getElementById("user-log-empty").style.display = logs.length ? "none" : "block";
-      tb.innerHTML = [...logs].reverse().map(l => {
+      tb.innerHTML = [...logs].reverse().map((l, i) => {
         const p = projects.find(x => x.name === l.project);
         const t = p ? p.tasks.find(x => x.id === l.taskId) : null;
         let isLate = false;
@@ -1378,13 +1383,22 @@
           <td>${esc(l.person)}</td>
           <td>${esc(l.project)}</td>
           <td>${esc(l.task)}</td>
+          <td>${esc(l.deadlineProject || l.deadlineTask || '—')}</td>
           <td>${l.before}%</td>
           <td>${l.after}%</td>
           <td>${isLate ? '<span style="color:#E24B4A">Ya</span>' : 'Tidak'}</td>
           <td>${esc(l.reason) || '—'}</td>
           <td>${esc(l.status) || 'Update'}</td>
+          <td>${isAdmin ? `<button class="btn-warn" onclick="deleteHistory(${updateLog.indexOf(l)})">Hapus</button>` : '—'}</td>
         </tr>`;
       }).join("");
+    }
+
+    function deleteHistory(idx) {
+      if (!confirm("Hapus log riwayat ini?")) return;
+      updateLog.splice(idx, 1);
+      saveState();
+      renderUserLog();
     }
 
     // ============================================================
