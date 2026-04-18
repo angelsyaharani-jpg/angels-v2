@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Benderang Hidup Indonesia — Dashboard</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo"><img src="https://i.imgur.com/placeholder.png" alt="BHI" onerror="this.style.display='none'"></div>
+    <div class="login-title">Selamat datang</div>
+    <div class="login-sub" id="login-sub">Pilih nama dan masukkan PIN 4 digit</div>
+    <select class="login-select" id="login-person" onchange="onPersonChange()"></select>
+    <div class="pin-row">
+      <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="pin-pad">
+      <button class="pin-btn" onclick="pinPress(1)">1</button><button class="pin-btn" onclick="pinPress(2)">2</button><button class="pin-btn" onclick="pinPress(3)">3</button>
+      <button class="pin-btn" onclick="pinPress(4)">4</button><button class="pin-btn" onclick="pinPress(5)">5</button><button class="pin-btn" onclick="pinPress(6)">6</button>
+      <button class="pin-btn" onclick="pinPress(7)">7</button><button class="pin-btn" onclick="pinPress(8)">8</button><button class="pin-btn" onclick="pinPress(9)">9</button>
+      <button class="pin-del" onclick="pinDel()">&#9003;</button><button class="pin-btn" onclick="pinPress(0)">0</button><div></div>
+    </div>
+    <div class="login-err" id="login-err"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+      <button class="login-forgot" onclick="showResetModal()">Lupa PIN?</button>
+      <a href="admin.html" style="font-size:12px;color:#EF9F27;text-decoration:none">⚙ Login Admin</a>
+    </div>
+  </div>
+</div>
+
+<!-- RESET MODAL -->
+<div class="modal-bg hidden" id="reset-overlay">
+  <div class="modal-box">
+    <div class="modal-title">Reset PIN karyawan</div>
+    <div class="modal-sub">Masukkan kode admin untuk mereset PIN.</div>
+    <select class="fi" id="reset-person"></select>
+    <input type="number" class="fi" id="reset-new-pin" placeholder="PIN baru (4 digit)">
+    <input type="password" class="fi" id="reset-admin-code" placeholder="Kode admin">
+    <div class="modal-err" id="reset-err"></div>
+    <div class="modal-ok" id="reset-ok"></div>
+    <div class="modal-row">
+      <button class="btn-ok" onclick="doResetPin()">Reset PIN</button>
+      <button class="btn-cancel" onclick="closeModal('reset-overlay')">Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELAY REASON MODAL -->
+<div class="modal-bg hidden" id="delay-modal">
+  <div class="modal-box">
+    <div class="modal-title">⚠ Alasan Keterlambatan</div>
+    <div class="modal-sub" id="delay-modal-sub">Deadline task ini sudah lewat. Silakan pilih alasan keterlambatan (min. 1, maks. 2 pilihan).</div>
+    <input type="hidden" id="delay-proj-id">
+    <input type="hidden" id="delay-task-id">
+    <input type="hidden" id="delay-new-pct">
+    <div class="delay-reason-opts" id="delay-reason-opts"></div>
+    <div class="delay-custom-wrap hidden" id="delay-custom-wrap">
+      <textarea class="fi" id="delay-custom-text" placeholder="Jelaskan alasan lainnya..." rows="2" style="resize:vertical"></textarea>
+    </div>
+    <div class="delay-counter" id="delay-counter">0/2 dipilih</div>
+    <div class="delay-warning" id="delay-warning"></div>
+    <div class="modal-row">
+      <button class="btn-ok" onclick="submitDelayUpdate()">Simpan Update</button>
+      <button class="btn-cancel" onclick="closeModal('delay-modal')">Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- SESSION BAR -->
+<div id="session-bar" class="hidden">
+  <div><span class="sname" id="session-name"></span><span class="srole" id="session-role"></span></div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="logout-btn" onclick="logout()">Keluar</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav" id="main-nav">
+  <button class="nb active" onclick="showPage('tv',this)">📺 TV Dashboard</button>
+  <button class="nb" onclick="showPage('update',this)">✏ Update Progress</button>
+  <button class="nb" onclick="showPage('log',this)">📋 Riwayat</button>
+  <button class="nb admin-tab hidden" onclick="showPage('adm-project',this)" id="nav-adm-project">Project & Inquiry</button>
+  <button class="nb admin-tab hidden" onclick="showPage('adm-employee',this)" id="nav-adm-employee">Karyawan & PIN</button>
+  <button class="nb admin-tab hidden" onclick="showPage('adm-wa',this)" id="nav-adm-wa">Notifikasi WA</button>
+  <button class="nb admin-tab hidden" onclick="showPage('adm-export',this)" id="nav-adm-export">Export</button>
+</div>
+
+<!-- TV PAGE -->
+<div class="page active" id="page-tv">
+  <div id="app-tv">
+    <div id="screen-dashboard">
+      <div class="hdr">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:16px;font-weight:700;color:#1D9E75;letter-spacing:1px">BENDERANG</span>
+          <div class="live-pill"><div class="ld"></div>LIVE</div>
+        </div>
+        <div style="text-align:right">
+          <div class="clock" id="clk">--:--:--</div>
+          <div class="datestr" id="dstr">--</div>
+        </div>
+      </div>
+      <div class="priority-grid" id="priority-grid"></div>
+      <div>
+        <div class="prog-label">Progress — semua project & inquiry (on progress & belum selesai)</div>
+        <div class="prog-grid" id="prog-grid"></div>
+      </div>
+      <div class="tv-footer">
+        <div class="footer-note" id="footer-note">Dashboard aktif</div>
+        <div class="mode-wrap">
+          <div class="mode-lbl" id="mode-label">Dashboard</div>
+          <div class="mode-bar-track"><div class="mode-bar-fill" id="mode-bar" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+    <div id="screen-slide">
+      <img id="slide-img" src="" alt="">
+      <div class="sov">
+        <span class="sov-cat" id="slide-cat"></span>
+      </div>
+      <div class="scap" id="slide-caption"></div>
+      <div class="spw"><div class="spb" id="slide-bar" style="width:0%"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- UPDATE PAGE -->
+<div class="page" id="page-update">
+  <div class="upd-wrap">
+    <div class="sec-title" id="upd-title">Update Progress</div>
+    <div id="adm-person-selector" style="display:none;margin-bottom:12px">
+      <div style="font-size:12px;color:#EF9F27;margin-bottom:6px">Mode Admin — pilih karyawan:</div>
+      <select class="adm-sel-person" id="adm-upd-person" onchange="loadTasksForPerson(this.value)"></select>
+    </div>
+    <div id="my-tasks"></div>
+  </div>
+</div>
+
+<!-- LOG PAGE -->
+<div class="page" id="page-log">
+  <div class="sec-title">Riwayat Update</div>
+  <p style="font-size:12px;color:#555e7a;margin-bottom:12px">Log tersimpan di browser. Aktifkan Google Sheets di Admin untuk log permanen.</p>
+  <div style="overflow-x:auto">
+    <table class="log-table">
+      <thead><tr><th>Waktu</th><th>Karyawan</th><th>Project</th><th>Task</th><th>Sebelum</th><th>Sesudah</th><th>Alasan</th><th>Status</th></tr></thead>
+      <tbody id="log-tbody"></tbody>
+    </table>
+  </div>
+  <div id="log-empty" style="text-align:center;padding:30px;color:#555e7a;font-size:13px">Belum ada update.</div>
+</div>
+
+<!-- ADMIN SECTIONS (if admin logged in here) -->
+<div class="page" id="page-adm-project">
+  <div style="padding:20px;text-align:center;color:#555e7a">
+    <p>Kelola project di halaman Admin.</p>
+    <a href="admin.html" style="color:#EF9F27;text-decoration:none;font-size:14px">→ Buka Halaman Admin</a>
+  </div>
+</div>
+<div class="page" id="page-adm-employee">
+  <div style="padding:20px;text-align:center;color:#555e7a">
+    <a href="admin.html" style="color:#EF9F27;text-decoration:none;font-size:14px">→ Buka Halaman Admin</a>
+  </div>
+</div>
+<div class="page" id="page-adm-wa">
+  <div style="padding:20px;text-align:center;color:#555e7a">
+    <a href="admin.html" style="color:#EF9F27;text-decoration:none;font-size:14px">→ Buka Halaman Admin</a>
+  </div>
+</div>
+<div class="page" id="page-adm-export">
+  <div style="padding:20px;text-align:center;color:#555e7a">
+    <a href="admin.html" style="color:#EF9F27;text-decoration:none;font-size:14px">→ Buka Halaman Admin</a>
+  </div>
+</div>
+
+<script src="js/bhi-data.js"></script>
+<script src="js/bhi-login.js"></script>
+<script>
+// ============================================================
+// USER PAGE — MAIN LOGIC
+// ============================================================
+
+function onLoginSuccess(){
+  document.getElementById("login-overlay").classList.add("hidden");
+  document.getElementById("session-bar").classList.remove("hidden");
+  document.getElementById("session-name").textContent = currentUser;
+  document.getElementById("session-role").textContent = isAdmin ? " · Admin" : " · Karyawan";
+
+  // Admin tabs shown
+  const adminTabs=["nav-adm-project","nav-adm-employee","nav-adm-wa","nav-adm-export"];
+  adminTabs.forEach(id=>document.getElementById(id).classList.toggle("hidden",!isAdmin));
+
+  // Setup update page
+  if(isAdmin){
+    document.getElementById("adm-person-selector").style.display="block";
+    populateAdmUpdSelect();
+  } else {
+    document.getElementById("adm-person-selector").style.display="none";
+    loadTasksForPerson(currentUser);
+  }
+  renderDashboard();
+  showDashboard();
+}
+
+// ============================================================
+// NAV
+// ============================================================
+function showPage(id,el){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".nb").forEach(b=>b.classList.remove("active"));
+  document.getElementById("page-"+id).classList.add("active");
+  if(el) el.classList.add("active");
+  if(id==="update"){
+    if(isAdmin){document.getElementById("adm-person-selector").style.display="block";populateAdmUpdSelect();}
+    else{document.getElementById("adm-person-selector").style.display="none";loadTasksForPerson(currentUser);}
+  }
+  if(id==="log") renderLog();
+  if(id==="tv") renderDashboard();
+}
+
+// ============================================================
+// TV DASHBOARD RENDER
+// ============================================================
+function renderDashboard(){
+  const {overdue,today,risk,tomorrow} = getDashboardTasks();
+
+  const grid=document.getElementById("priority-grid");
+  function card(cls,lbl,lblCls,cntCls,items,dotCls,daysCls){
+    const it=items.slice(0,4).map(x=>`<div class="task-item"><div class="dot ${dotCls}"></div><span class="tname" title="${esc(x.proj)} — ${esc(x.task)}">${esc(x.task)}</span><span class="tperson">${esc(x.person?.split(" ")[0]||"")}</span>${x.d!==undefined?`<span class="tdays ${daysCls||''}">${x.d<0?Math.abs(x.d)+"h lalu":x.d===0?"Hari ini":x.d+"h lagi"}</span>`:""}</div>`).join("") || `<div class="no-items">—</div>`;
+    return `<div class="pcard ${cls}"><div class="pcard-label ${lbl}">${lbl.replace("lbl-","").toUpperCase()}</div><div class="pcard-count ${cntCls}">${items.length}</div><div class="task-items">${it}</div></div>`;
+  }
+  grid.innerHTML =
+    card("pcard-overdue","lbl-overdue","lbl-overdue","cnt-overdue",overdue,"dot-overdue","days-overdue") +
+    card("pcard-today","lbl-today","lbl-today","cnt-today",today,"dot-today","") +
+    card("pcard-risk","lbl-risk","lbl-risk","cnt-risk",risk,"dot-risk","days-risk") +
+    card("pcard-tomorrow","lbl-tomorrow","lbl-tomorrow","cnt-tomorrow",tomorrow,"dot-tomorrow","");
+
+  // Progress grid — only incomplete projects
+  const progs = getProjectProgress().filter(p=>p.pctAvg<100);
+  const pgrid=document.getElementById("prog-grid");
+  if(!progs.length){pgrid.innerHTML='<div style="color:#2a3040;font-size:13px;font-style:italic">Semua project selesai! 🎉</div>';return;}
+  pgrid.innerHTML=progs.map(p=>{
+    const color=p.pctAvg>=75?"#1D9E75":p.pctAvg>=50?"#378ADD":p.pctAvg>=25?"#BA7517":"#E24B4A";
+    return `<div class="prog-row">
+      <div class="pr-left">
+        <div class="pr-name" title="${esc(p.name)}">${esc(p.name)}</div>
+        <div class="pr-meta">${esc(p.client)} · ${esc(p.mainPerson)}</div>
+        <div class="pr-bar"><div class="pr-fill" style="width:${p.pctAvg}%;background:${color}"></div></div>
+      </div>
+      <div class="pr-right">
+        <div class="pr-pct" style="color:${color}">${p.pctAvg}%</div>
+        <div class="pr-type ${p.type==='project'?'type-proj':'type-inq'}">${p.type==="project"?"PROJ":"INQ"}</div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ============================================================
+// CLOCK & SLIDESHOW
+// ============================================================
+function tick(){
+  const n=new Date();
+  document.getElementById("clk").textContent=`${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+  document.getElementById("dstr").textContent=`${DAYS[n.getDay()]}, ${n.getDate()} ${MONTHS[n.getMonth()]} ${n.getFullYear()}`;
+}
+setInterval(tick,1000); tick();
+
+// Re-render dashboard every minute
+setInterval(()=>{if(document.getElementById("page-tv").classList.contains("active")) renderDashboard();},60000);
+
+let images=[], slideIdx=0;
+const sDash=document.getElementById("screen-dashboard");
+const sSlide=document.getElementById("screen-slide");
+const modeBar=document.getElementById("mode-bar");
+const modeLabel=document.getElementById("mode-label");
+const slideBar=document.getElementById("slide-bar");
+const footerNote=document.getElementById("footer-note");
+let slTimer=null;
+
+// Load images from GDrive config if set
+(function loadGDriveImages(){
+  if(gdrivePengumuman||gdriveVision){
+    let imgP=[], imgV=[];
+    const p1=gdrivePengumuman?fetch(gdrivePengumuman).then(r=>r.json()).then(urls=>{imgP=urls.map(u=>({url:u,cat:"Pengumuman",caption:""}));}).catch(()=>{}):Promise.resolve();
+    const p2=gdriveVision?fetch(gdriveVision).then(r=>r.json()).then(urls=>{imgV=urls.map(u=>({url:u,cat:"Vision",caption:""}));}).catch(()=>{}):Promise.resolve();
+    Promise.all([p1,p2]).then(()=>{
+      const maxLen=Math.max(imgP.length,imgV.length);
+      const combined=[];
+      for(let i=0;i<maxLen;i++){
+        if(i<imgP.length) combined.push(imgP[i]);
+        if(i<imgV.length) combined.push(imgV[i]);
+      }
+      images=combined;
+    });
+  }
+})();
+
+function startTimer(dur,barEl,onDone){
+  clearInterval(slTimer);let el=0;barEl.style.width="0%";
+  slTimer=setInterval(()=>{el+=100;barEl.style.width=Math.min(100,Math.round(el/dur*100))+"%";if(el>=dur){clearInterval(slTimer);onDone();}},100);
+}
+
+function showDashboard(){
+  renderDashboard();
+  sDash.style.opacity="1";sDash.style.pointerEvents="auto";
+  sSlide.style.opacity="0";sSlide.style.pointerEvents="none";
+  modeLabel.textContent="Dashboard";
+  footerNote.textContent=images.length?"Berganti ke slideshow dalam…":"Dashboard aktif";
+  startTimer(DASH_DUR,modeBar,()=>{if(images.length)showSlide(0);else showDashboard();});
+}
+
+function showSlide(idx){
+  if(!images.length){showDashboard();return;}
+  slideIdx=idx%images.length;
+  const img=images[slideIdx];
+  document.getElementById("slide-img").src=img.url;
+  document.getElementById("slide-caption").textContent=img.caption||"";
+  const catEl=document.getElementById("slide-cat");
+  catEl.textContent=img.cat||"";
+  catEl.style.background=img.cat==="Pengumuman"?"#378ADD66":img.cat==="Vision"?"#1D9E7566":"#00000066";
+  document.getElementById("slide-bar").style.background=img.cat==="Pengumuman"?"#378ADD":"#1D9E75";
+  sDash.style.opacity="0";sDash.style.pointerEvents="none";
+  sSlide.style.opacity="1";sSlide.style.pointerEvents="auto";
+  modeLabel.textContent=`${img.cat||"Gambar"} ${slideIdx+1}/${images.length}`;
+  footerNote.textContent="";
+  startTimer(SLIDE_DUR,slideBar,()=>{slideIdx+1>=images.length?showDashboard():showSlide(slideIdx+1);});
+}
+
+// ============================================================
+// UPDATE PROGRESS
+// ============================================================
+function populateAdmUpdSelect(){
+  const sel=document.getElementById("adm-upd-person");
+  const cur=sel.value;
+  sel.innerHTML='<option value="">-- Pilih karyawan --</option>';
+  employees.forEach(e=>{const o=document.createElement("option");o.value=e.name;o.textContent=e.name;sel.appendChild(o);});
+  if(cur) sel.value=cur;
+}
+
+function loadTasksForPerson(person){
+  const el=document.getElementById("my-tasks");
+  if(!person){el.innerHTML='<div class="no-tasks">Pilih karyawan.</div>';return;}
+
+  const myTasks=[];
+  projects.forEach(p=>{
+    p.tasks.forEach(t=>{
+      if(t.person===person&&t.pct<100){
+        myTasks.push({...t,projId:p.id,projName:p.name,projType:p.type});
+      }
+    });
+  });
+
+  if(!myTasks.length){el.innerHTML='<div class="no-tasks">🎉 Tidak ada task aktif. Semua selesai!</div>';return;}
+
+  el.innerHTML=myTasks.map(t=>{
+    const dl=t.extDeadline||t.deadline;
+    const diff=diffDays(dl);
+    const isLate=diff!==null&&diff<0;
+    const isRisk=diff!==null&&(diff===0||diff===1);
+    const dlClass=isLate?"late":isRisk?"risk":"";
+    const dlStr=fmtDeadline(dl);
+    const extBadge=t.extDeadline?`<span style="font-size:10px;color:#EF9F27;margin-left:6px">(diperpanjang)</span>`:"";
+    return `<div class="upd-task-card">
+      <div class="utc-proj">${esc(t.projName)} <span class="badge ${t.projType==='project'?'b-proj':'b-inq'}">${t.projType==='project'?'Project':'Inquiry'}</span></div>
+      <div class="utc-task">${esc(t.name)}</div>
+      <div class="utc-pct" style="color:${t.pct>=75?'#5DCAA5':t.pct>=50?'#378ADD':'#FAC775'}">${t.pct}%</div>
+      <div class="utc-deadline ${dlClass}">⏰ Deadline: ${dlStr}${extBadge}${t.lateReason?`<span style="margin-left:8px;font-size:10px;color:#EF9F27">Alasan: ${esc(t.lateReason)}</span>`:""}</div>
+      <div class="utc-row">
+        <input type="number" min="0" max="100" value="${t.pct}" id="upd-inp-${t.id}" placeholder="%" style="width:72px">
+        <button class="btn-upd" onclick="doUpdate(${t.projId},${t.id},'${esc(person)}')">Update</button>
+        ${isLate?`<button class="btn-delay" onclick="openDelayModal(${t.projId},${t.id},'${esc(person)}')">⚠ Isi Alasan Terlambat</button>`:""}
+      </div>
+      <div class="utc-msg" id="utc-msg-${t.id}"></div>
+    </div>`;
+  }).join("");
+}
+
+function doUpdate(projId, taskId, person){
+  const newPct=parseInt(document.getElementById("upd-inp-"+taskId).value);
+  const msg=document.getElementById("utc-msg-"+taskId);
+  if(isNaN(newPct)||newPct<0||newPct>100){msg.textContent="Masukkan angka 0–100.";msg.style.color="#E24B4A";return;}
+
+  const p=projects.find(x=>x.id===projId);
+  const t=p?.tasks.find(x=>x.id===taskId);
+  if(!t){msg.textContent="Task tidak ditemukan.";return;}
+
+  const dl=t.extDeadline||t.deadline;
+  const diff=diffDays(dl);
+  const isLate=diff!==null&&diff<0;
+
+  // If late and no reason yet, open delay modal instead
+  if(isLate&&!t.lateReason&&newPct<100){
+    document.getElementById("delay-proj-id").value=projId;
+    document.getElementById("delay-task-id").value=taskId;
+    document.getElementById("delay-new-pct").value=newPct;
+    openDelayModal(projId,taskId,person,newPct);
+    return;
+  }
+
+  commitUpdate(projId,taskId,newPct,person,isLate,t.lateReason||"");
+  msg.textContent=newPct>=100?"✓ Task selesai!":"✓ Progress diperbarui.";
+  msg.style.color="#5DCAA5";
+  setTimeout(()=>{loadTasksForPerson(person);renderDashboard();},1200);
+}
+
+function commitUpdate(projId,taskId,newPct,person,isLate,reason){
+  const p=projects.find(x=>x.id===projId);
+  const t=p?.tasks.find(x=>x.id===taskId);
+  if(!t) return;
+  const old=t.pct;
+  t.pct=newPct;
+  const logEntry={
+    time:new Date().toLocaleString("id-ID"),
+    updatedBy:currentUser,
+    person,
+    project:p.name,
+    task:t.name,
+    before:old,
+    after:newPct,
+    isLate,
+    reason,
+    deadline:t.extDeadline||t.deadline||"",
+    status:newPct>=100?"Selesai":"Update"
+  };
+  updateLog.push(logEntry);
+  saveState();
+  pushToSheets(logEntry);
+}
+
+// ============================================================
+// DELAY REASON MODAL
+// ============================================================
+let delayCtx = {projId:null,taskId:null,person:null,newPct:null};
+
+function openDelayModal(projId,taskId,person,newPct){
+  delayCtx={projId,taskId,person,newPct:newPct??parseInt(document.getElementById("upd-inp-"+taskId)?.value??0)};
+  const p=projects.find(x=>x.id===projId);
+  const t=p?.tasks.find(x=>x.id===taskId);
+
+  document.getElementById("delay-modal-sub").textContent=`Task: "${t?.name||""}" — Deadline ${fmtDeadline(t?.extDeadline||t?.deadline||"")}. Pilih 1–2 alasan keterlambatan.`;
+
+  const optsEl=document.getElementById("delay-reason-opts");
+  optsEl.innerHTML=DELAY_REASONS.map((r,i)=>`<label class="delay-opt-label" id="dol-${i}">
+    <input type="checkbox" value="${esc(r)}" onchange="onDelayCheckChange()" ${t?.lateReason&&t.lateReason.includes(r)?'checked':''}>
+    ${esc(r)}
+  </label>`).join("");
+
+  document.getElementById("delay-custom-wrap").classList.add("hidden");
+  document.getElementById("delay-warning").textContent="";
+  updateDelayCounter();
+  document.getElementById("delay-modal").classList.remove("hidden");
+}
+
+function onDelayCheckChange(){
+  const checks=Array.from(document.querySelectorAll("#delay-reason-opts input[type=checkbox]"));
+  const checked=checks.filter(c=>c.checked);
+  const hasLainnya=checked.some(c=>c.value==="Lainnya");
+
+  // Max 2
+  if(checked.length>2){
+    // Uncheck last changed
+    checks.forEach(c=>{
+      if(!checked.slice(0,2).includes(c)) c.checked=false;
+    });
+  }
+
+  document.getElementById("delay-custom-wrap").classList.toggle("hidden",!hasLainnya);
+  updateDelayCounter();
+
+  // Update visual
+  checks.forEach(c=>{
+    c.closest("label").classList.toggle("selected",c.checked);
+  });
+}
+
+function updateDelayCounter(){
+  const n=Array.from(document.querySelectorAll("#delay-reason-opts input[type=checkbox]")).filter(c=>c.checked).length;
+  document.getElementById("delay-counter").textContent=`${n}/2 dipilih`;
+}
+
+function submitDelayUpdate(){
+  const checks=Array.from(document.querySelectorAll("#delay-reason-opts input[type=checkbox]")).filter(c=>c.checked);
+  const warn=document.getElementById("delay-warning");
+  if(!checks.length){warn.textContent="Pilih minimal 1 alasan.";return;}
+
+  let reasons=checks.map(c=>c.value);
+  const hasLainnya=reasons.includes("Lainnya");
+  if(hasLainnya){
+    const custom=document.getElementById("delay-custom-text").value.trim();
+    if(!custom){warn.textContent="Isi alasan 'Lainnya'.";return;}
+    reasons=reasons.map(r=>r==="Lainnya"?`Lainnya: ${custom}`:r);
+  }
+  const reasonStr=reasons.join(" | ");
+
+  // Save reason to task
+  const {projId,taskId,person,newPct}=delayCtx;
+  const p=projects.find(x=>x.id===projId);
+  const t=p?.tasks.find(x=>x.id===taskId);
+  if(t) t.lateReason=reasonStr;
+
+  commitUpdate(projId,taskId,newPct,person,true,reasonStr);
+  closeModal("delay-modal");
+  const msg=document.getElementById("utc-msg-"+taskId);
+  if(msg){msg.textContent="✓ Update + alasan tersimpan.";msg.style.color="#5DCAA5";}
+  setTimeout(()=>{loadTasksForPerson(person);renderDashboard();},1200);
+}
+
+// ============================================================
+// LOG
+// ============================================================
+function renderLog(){
+  const tb=document.getElementById("log-tbody");
+  const empty=document.getElementById("log-empty");
+  // Filter by current user (if not admin)
+  const logs=isAdmin?updateLog:updateLog.filter(l=>l.person===currentUser);
+  if(!logs.length){tb.innerHTML="";empty.style.display="block";return;}
+  empty.style.display="none";
+  tb.innerHTML=[...logs].reverse().map(l=>`<tr>
+    <td style="white-space:nowrap">${l.time}</td>
+    <td>${esc(l.person||"")}</td>
+    <td>${esc(l.project||"")}</td>
+    <td>${esc(l.task||"")}</td>
+    <td>${l.before??0}%</td>
+    <td><span class="${parseInt(l.after)>=parseInt(l.before)?'chg-up':'chg-dn'}">${l.after??0}%</span></td>
+    <td style="font-size:11px;max-width:180px">${esc(l.reason||"")}</td>
+    <td>${l.status==="Selesai"?'<span class="st-done">Selesai</span>':l.isLate?'<span class="st-late">Terlambat</span>':'<span class="st-ok">Update</span>'}</td>
+  </tr>`).join("");
+}
+
+// ============================================================
+// UTIL
+// ============================================================
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+
+// ============================================================
+// BOOT
+// ============================================================
+initPins();
+populateLoginSelect();
+populateResetSelect();
+
+if(!checkExistingSession()){
+  document.getElementById("login-overlay").classList.remove("hidden");
+}
+</script>
+</body>
+</html>
