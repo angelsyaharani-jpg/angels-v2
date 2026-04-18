@@ -5,9 +5,9 @@
 
 // ============ CONFIG ============
 const ADMIN_CODE = "benderang2025";
-const DASH_DUR = 5000; // 5 detik (TEST)
-const PHOTO_DUR = 5000; // 5 detik (TEST)
-const SLIDE_DUR = 5000; // 5 detik (TEST)
+const DASH_DUR = 600000; // 10 menit
+const PHOTO_DUR = 12000; // 12 detik
+const SLIDE_DUR = 12000; // 12 detik
 
 const DAYS = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 const MONTHS = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
