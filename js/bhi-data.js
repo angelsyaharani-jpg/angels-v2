@@ -5,7 +5,7 @@
 
 // ============ CONFIG ============
 const ADMIN_CODE = "benderang2025";
-const DASH_DUR = 60000; // 10 menit
+const DASH_DUR = 600000; // 10 menit
 const PHOTO_DUR = 12000; // 12 detik
 const SLIDE_DUR = 12000; // 12 detik
 
@@ -115,7 +115,7 @@ let autoSendWA = false;
 let lastAutoSendDate = "";
 
 // ============ INIT STATE FROM LOCALSTORAGE ============
-(function () {
+function initGlobalState() {
   const s = loadState();
   if (s) {
     if (s.employees) employees = s.employees;
@@ -132,7 +132,59 @@ let lastAutoSendDate = "";
       gdriveVision = s.gdrive.vis || "";
     }
   }
-})();
+}
+
+initGlobalState();
+
+// Listen for updates from other tabs
+window.addEventListener('storage', (e) => {
+  if (e.key === STORAGE_KEY) {
+    initGlobalState();
+    
+    // Refresh UI if functions are available
+    if (typeof renderDashboard === 'function') {
+      const tvPage = document.getElementById("page-tv");
+      if (tvPage && tvPage.classList.contains("active")) renderDashboard();
+    }
+    
+    if (typeof loadTasksForPerson === 'function') {
+      const updPage = document.getElementById("page-update");
+      if (updPage && updPage.classList.contains("active")) {
+        const sel = document.getElementById("adm-upd-person");
+        if (sel && sel.parentElement && sel.parentElement.style.display !== "none" && sel.value) {
+          loadTasksForPerson(sel.value);
+        } else if (typeof currentUser !== 'undefined') {
+          loadTasksForPerson(currentUser);
+        }
+      }
+    }
+    
+    if (typeof renderLog === 'function') {
+      const logPage = document.getElementById("page-log");
+      if (logPage && logPage.classList.contains("active")) renderLog();
+    }
+    
+    if (typeof renderUserLog === 'function') {
+      const uLogPage = document.getElementById("page-user-log");
+      if (uLogPage && uLogPage.classList.contains("active")) renderUserLog();
+    }
+    
+    if (typeof renderProjectList === 'function') {
+      const projPage = document.getElementById("page-adm-project");
+      if (projPage && projPage.classList.contains("active")) renderProjectList();
+    }
+    
+    if (typeof renderEmpTable === 'function') {
+      const empPage = document.getElementById("page-adm-employee");
+      if (empPage && empPage.classList.contains("active")) renderEmpTable();
+    }
+    
+    if (typeof renderWAPanel === 'function') {
+      const waPage = document.getElementById("page-adm-wa");
+      if (waPage && waPage.classList.contains("active")) renderWAPanel();
+    }
+  }
+});
 
 // ============ PIN ============
 function getPins() { try { return JSON.parse(localStorage.getItem("bhi_pins_v5") || "{}"); } catch (e) { return {}; } }
