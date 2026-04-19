@@ -5,7 +5,7 @@
 
 // ============ CONFIG ============
 const ADMIN_CODE = "benderang2025";
-const DASH_DUR = 600000; // 10 menit
+const DASH_DUR = 1000; // 10 menit
 const PHOTO_DUR = 12000; // 12 detik
 const SLIDE_DUR = 12000; // 12 detik
 
