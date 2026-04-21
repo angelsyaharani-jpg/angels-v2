@@ -165,6 +165,15 @@ db.ref(DB_PATH).on('value', (snapshot) => {
         const logPage = document.getElementById("page-log");
         if (!logPage || logPage.classList.contains("active")) renderLog();
     }
+    
+    // REPOPULATE SELECT DROPDOWNS (Login, Reset, Admin Update)
+    if (typeof populateLoginSelect === "function") populateLoginSelect();
+    if (typeof populateResetSelect === "function") populateResetSelect();
+    if (typeof populateAdmUpdSelect === "function") populateAdmUpdSelect();
+    if (typeof populatePICSelect === "function") {
+        populatePICSelect("np-person");
+        populatePICSelect("at-person");
+    }
     if (typeof loadTasksForPerson === "function" && typeof currentUser !== "undefined") {
         const updPage = document.getElementById("page-update");
         if (!updPage || updPage.classList.contains("active")) {
