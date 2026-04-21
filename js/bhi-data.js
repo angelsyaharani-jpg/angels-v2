@@ -115,7 +115,7 @@ function saveState() {
   try {
     db.ref(DB_PATH).set({
       employees, projects, updateLog, sheetsUrl, waToken, nProjId, nTaskId,
-      autoSendWA, lastAutoSendDate,
+      autoSendWA, lastAutoSendDate, pins: getPins(),
       gdrive: { ann: (typeof gdrivePengumuman !== "undefined" ? gdrivePengumuman : ""), vis: (typeof gdriveVision !== "undefined" ? gdriveVision : "") }
     });
   } catch (e) { console.error("Firebase Save Error:", e); }
@@ -139,6 +139,19 @@ db.ref(DB_PATH).on('value', (snapshot) => {
       gdrivePengumuman = s.gdrive.ann || "";
       gdriveVision = s.gdrive.vis || "";
     }
+    if (s.pins) {
+        localStorage.setItem("bhi_pins_v5", JSON.stringify(s.pins));
+    }
+    // Connection Indicator
+    let connStatus = document.getElementById("fb-status");
+    if (!connStatus) {
+        connStatus = document.createElement("div");
+        connStatus.id = "fb-status";
+        connStatus.style = "position:fixed;bottom:10px;left:10px;font-size:10px;background:#1D9E75;color:#fff;padding:4px 8px;border-radius:20px;z-index:9999;pointer-events:none;opacity:0.8";
+        document.body.appendChild(connStatus);
+    }
+    connStatus.innerHTML = "Firebase Connected ✅";
+    connStatus.style.background = "#1D9E75";
 
     // Trigger UI Renders if functions exist on the page
     if (typeof renderDashboard === "function") {
