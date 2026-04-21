@@ -42,28 +42,24 @@ function fmtDeadline(dStr) {
   return `${label} (${diff} hari lagi)`;
 }
 
-// ============ PERSISTENT STORAGE ============
-const STORAGE_KEY = "bhi_state_v6";
+// ============ FIREBASE CONFIG & INIT ============
+const firebaseConfig = {
+  apiKey: "AIzaSyCto8hVwgtbjVuzrHfCE0l9EL-AODwreJs",
+  authDomain: "benderang-hidup-7ea07.firebaseapp.com",
+  databaseURL: "https://benderang-hidup-7ea07-default-rtdb.firebaseio.com/",
+  projectId: "benderang-hidup-7ea07",
+  storageBucket: "benderang-hidup-7ea07.firebasestorage.app",
+  messagingSenderId: "543377284754",
+  appId: "1:543377284754:web:b9b96d989b21f1e22b904b",
+  measurementId: "G-JWWH2R4XJ7"
+};
 
-function loadState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (e) { }
-  return null;
-}
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const DB_PATH = "bhi_state_v6";
 
-function saveState() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      employees, projects, updateLog, sheetsUrl, waToken, nProjId, nTaskId,
-      autoSendWA, lastAutoSendDate,
-      gdrive: { ann: (typeof gdrivePengumuman !== "undefined" ? gdrivePengumuman : ""), vis: (typeof gdriveVision !== "undefined" ? gdriveVision : "") }
-    }));
-  } catch (e) { }
-}
-
-// ============ DEFAULT STATE ============
+// ============ DEFAULT STATE (FALLBACK) ============
 let employees = [
   { name: "Andi Saputra", init: "AS", wa: "" },
   { name: "Budi Hartono", init: "BH", wa: "" },
@@ -114,10 +110,22 @@ let gdriveVision = "https://script.google.com/macros/s/AKfycbyq1-hPuTj97OsNOQqTn
 let autoSendWA = false;
 let lastAutoSendDate = "";
 
-// ============ INIT STATE FROM LOCALSTORAGE ============
-function initGlobalState() {
-  const s = loadState();
+// ============ PERSISTENT STORAGE (FIREBASE) ============
+function saveState() {
+  try {
+    db.ref(DB_PATH).set({
+      employees, projects, updateLog, sheetsUrl, waToken, nProjId, nTaskId,
+      autoSendWA, lastAutoSendDate,
+      gdrive: { ann: (typeof gdrivePengumuman !== "undefined" ? gdrivePengumuman : ""), vis: (typeof gdriveVision !== "undefined" ? gdriveVision : "") }
+    });
+  } catch (e) { console.error("Firebase Save Error:", e); }
+}
+
+// REAL-TIME SYNC LISTENER
+db.ref(DB_PATH).on('value', (snapshot) => {
+  const s = snapshot.val();
   if (s) {
+    console.log("Firebase data received/updated");
     if (s.employees) employees = s.employees;
     if (s.projects) projects = s.projects;
     if (s.updateLog) updateLog = s.updateLog;
@@ -131,57 +139,52 @@ function initGlobalState() {
       gdrivePengumuman = s.gdrive.ann || "";
       gdriveVision = s.gdrive.vis || "";
     }
-  }
-}
 
-initGlobalState();
-
-// Listen for updates from other tabs
-window.addEventListener('storage', (e) => {
-  if (e.key === STORAGE_KEY) {
-    initGlobalState();
-    
-    // Refresh UI if functions are available
-    if (typeof renderDashboard === 'function') {
-      const tvPage = document.getElementById("page-tv");
-      if (tvPage && tvPage.classList.contains("active")) renderDashboard();
+    // Trigger UI Renders if functions exist on the page
+    if (typeof renderDashboard === "function") {
+        const tvPage = document.getElementById("page-tv");
+        if (!tvPage || tvPage.classList.contains("active")) renderDashboard();
     }
-    
-    if (typeof loadTasksForPerson === 'function') {
-      const updPage = document.getElementById("page-update");
-      if (updPage && updPage.classList.contains("active")) {
-        const sel = document.getElementById("adm-upd-person");
-        if (sel && sel.parentElement && sel.parentElement.style.display !== "none" && sel.value) {
-          loadTasksForPerson(sel.value);
-        } else if (typeof currentUser !== 'undefined') {
-          loadTasksForPerson(currentUser);
+    if (typeof renderProjectList === "function") {
+        const projPage = document.getElementById("page-adm-project");
+        if (!projPage || projPage.classList.contains("active")) renderProjectList();
+    }
+    if (typeof renderEmpTable === "function") {
+        const empPage = document.getElementById("page-adm-employee");
+        if (!empPage || empPage.classList.contains("active")) renderEmpTable();
+    }
+    if (typeof renderWAPanel === "function") {
+        const waPage = document.getElementById("page-adm-wa");
+        if (!waPage || waPage.classList.contains("active")) renderWAPanel();
+    }
+    if (typeof renderUserLog === "function") {
+        const uLogPage = document.getElementById("page-user-log");
+        if (!uLogPage || uLogPage.classList.contains("active")) renderUserLog();
+    }
+    if (typeof renderLog === "function") {
+        const logPage = document.getElementById("page-log");
+        if (!logPage || logPage.classList.contains("active")) renderLog();
+    }
+    if (typeof loadTasksForPerson === "function" && typeof currentUser !== "undefined") {
+        const updPage = document.getElementById("page-update");
+        if (!updPage || updPage.classList.contains("active")) {
+            const sel = document.getElementById("adm-upd-person");
+            if (sel && sel.parentElement && sel.parentElement.style.display !== "none" && sel.value) {
+              loadTasksForPerson(sel.value);
+            } else if (typeof currentUser !== 'undefined') {
+              loadTasksForPerson(currentUser);
+            }
         }
-      }
     }
-    
-    if (typeof renderLog === 'function') {
-      const logPage = document.getElementById("page-log");
-      if (logPage && logPage.classList.contains("active")) renderLog();
-    }
-    
-    if (typeof renderUserLog === 'function') {
-      const uLogPage = document.getElementById("page-user-log");
-      if (uLogPage && uLogPage.classList.contains("active")) renderUserLog();
-    }
-    
-    if (typeof renderProjectList === 'function') {
-      const projPage = document.getElementById("page-adm-project");
-      if (projPage && projPage.classList.contains("active")) renderProjectList();
-    }
-    
-    if (typeof renderEmpTable === 'function') {
-      const empPage = document.getElementById("page-adm-employee");
-      if (empPage && empPage.classList.contains("active")) renderEmpTable();
-    }
-    
-    if (typeof renderWAPanel === 'function') {
-      const waPage = document.getElementById("page-adm-wa");
-      if (waPage && waPage.classList.contains("active")) renderWAPanel();
+  } else {
+    // ONE-TIME MIGRATION: If Firebase is empty, check localStorage
+    const localRaw = localStorage.getItem("bhi_state_v6");
+    if (localRaw) {
+      console.log("Migrating local data to Firebase...");
+      try {
+        const localState = JSON.parse(localRaw);
+        db.ref(DB_PATH).set(localState);
+      } catch (e) { }
     }
   }
 });
